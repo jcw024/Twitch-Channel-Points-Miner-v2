@@ -2,6 +2,7 @@ import json
 import logging
 import random
 import time
+import socket   #for sending data via TCP
 from threading import Thread, Timer
 
 from dateutil import parser
@@ -21,13 +22,15 @@ logger = logging.getLogger(__name__)
 
 
 class WebSocketsPool:
-    __slots__ = ["ws", "twitch", "streamers", "events_predictions"]
+    __slots__ = ["ws", "twitch", "streamers", "events_predictions", "TCP_IP", "TCP_PORT"]
 
-    def __init__(self, twitch, streamers, events_predictions):
+    def __init__(self, twitch, streamers, events_predictions, TCP_IP='127.0.0.1', TCP_PORT=7777):
         self.ws = []
         self.twitch = twitch
         self.streamers = streamers
         self.events_predictions = events_predictions
+        self.TCP_IP = TCP_IP
+        self.TCP_PORT = TCP_PORT
 
     """
     API Limits
@@ -62,7 +65,9 @@ class WebSocketsPool:
             on_message=WebSocketsPool.on_message,
             on_open=WebSocketsPool.on_open,
             on_error=WebSocketsPool.on_error,
-            on_close=WebSocketsPool.on_close
+            on_close=WebSocketsPool.on_close,
+            TCP_IP=self.TCP_IP,
+            TCP_PORT=self.TCP_PORT
             # on_close=WebSocketsPool.handle_reconnection, # Do nothing.
         )
 
@@ -150,6 +155,15 @@ class WebSocketsPool:
                 self.__submit(ws.index, topic)
 
     @staticmethod
+    def send_TCP_message(ws, message):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setblocking(False)
+            s.connect_ex((ws.TCP_IP, ws.TCP_PORT))
+            if message.data:
+                s.sendall(json.dumps(message.data).encode('utf-8'))
+
+
+    @staticmethod
     def on_message(ws, message):
         logger.debug(f"#{ws.index} - Received: {message.strip()}")
         response = json.loads(message)
@@ -157,6 +171,7 @@ class WebSocketsPool:
         if response["type"] == "MESSAGE":
             # We should create a Message class ...
             message = Message(response["data"])
+
 
             # If we have more than one PubSub connection, messages may be duplicated
             # Check the concatenation between message_type.top.channel_id
@@ -175,6 +190,8 @@ class WebSocketsPool:
             if streamer_index != -1:
                 try:
                     if message.topic == "community-points-user-v1":
+                        WebSocketsPool.send_TCP_message(ws, message)
+
                         if message.type in ["points-earned", "points-spent"]:
                             balance = message.data["balance"]["balance"]
                             ws.streamers[streamer_index].channel_points = balance
@@ -230,7 +247,7 @@ class WebSocketsPool:
                             ws.twitch.update_raid(ws.streamers[streamer_index], raid)
 
                     elif message.topic == "predictions-channel-v1":
-
+                        WebSocketsPool.send_TCP_message(ws, message)
                         event_dict = message.data["event"]
                         event_id = event_dict["id"]
                         event_status = event_dict["status"]
@@ -313,6 +330,7 @@ class WebSocketsPool:
                                 )
 
                     elif message.topic == "predictions-user-v1":
+                        WebSocketsPool.send_TCP_message(ws, message)
                         event_id = message.data["prediction"]["event_id"]
                         if event_id in ws.events_predictions:
                             event_prediction = ws.events_predictions[event_id]
