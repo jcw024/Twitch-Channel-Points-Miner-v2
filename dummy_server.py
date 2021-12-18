@@ -11,7 +11,7 @@ def on_new_client(conn, addr):
         data = conn.recv(BUFFER_SIZE)
         print(data, flush=True)
         if not data: break
-        conn.sendall(data)
+        conn.send(data)
     print(addr, " closed", flush=True)
     conn.close()
 
