@@ -156,11 +156,14 @@ class WebSocketsPool:
 
     @staticmethod
     def send_TCP_message(ws, message):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.setblocking(False)
-            s.connect_ex((ws.TCP_IP, ws.TCP_PORT))
-            if message.data:
-                s.sendall(json.dumps(message.data).encode('utf-8'))
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setblocking(False)
+                s.connect_ex((ws.TCP_IP, ws.TCP_PORT))
+                if message.data:
+                    s.sendall(json.dumps(message.data).encode('utf-8'))
+        except ConnectionRefusedError:
+            print('\033[91m'+"failed to send data: "+'\033[0m', message)
 
 
     @staticmethod
