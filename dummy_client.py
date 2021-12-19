@@ -15,6 +15,8 @@ while 1:
     s.send(bytes(f"sending message #{i}",'utf-8'))
     time.sleep(1)
     i += 1
-data = s.recv(BUFFER_SIZE)
-s.close()
+    data = s.recv(BUFFER_SIZE)
+    s.close()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((TCP_IP, TCP_PORT))
 
