@@ -250,7 +250,6 @@ class WebSocketsPool:
                             ws.twitch.update_raid(ws.streamers[streamer_index], raid)
 
                     elif message.topic == "predictions-channel-v1":
-                        WebSocketsPool.send_TCP_message(ws, message)
                         event_dict = message.data["event"]
                         event_id = event_dict["id"]
                         event_status = event_dict["status"]
@@ -301,7 +300,15 @@ class WebSocketsPool:
                                         )
                                         place_bet_thread.daemon = True
                                         place_bet_thread.start()
-
+                                        
+                                        #extract bet data
+                                        TCP_message = message
+                                        decision = event.bet.calculate(event.streamer.channel_points)
+                                        TCP_message.data['event_A'] = ws.events_predictions[event_id].bet.get_outcome(0)
+                                        TCP_message.data['event_B'] = ws.events_predictions[event_id].bet.get_outcome(1)
+                                        TCP_message.data['decision'] = decision["choice"]
+                                        
+                                        WebSocketsPool.send_TCP_message(ws, TCP_message)
                                         logger.info(
                                             f"Place the bet after: {start_after}s for: {ws.events_predictions[event_id]}",
                                             extra={
@@ -333,7 +340,6 @@ class WebSocketsPool:
                                 )
 
                     elif message.topic == "predictions-user-v1":
-                        WebSocketsPool.send_TCP_message(ws, message)
                         event_id = message.data["prediction"]["event_id"]
                         if event_id in ws.events_predictions:
                             event_prediction = ws.events_predictions[event_id]
@@ -348,6 +354,7 @@ class WebSocketsPool:
                                 decision = event_prediction.bet.get_decision()
                                 choice = event_prediction.bet.decision["choice"]
 
+                                WebSocketsPool.send_TCP_message(ws, message)
                                 logger.info(
                                     f"{event_prediction} - Decision: {choice}: {decision['title']} ({decision['color']}) - Result: {event_prediction.result['string']}",
                                     extra={
