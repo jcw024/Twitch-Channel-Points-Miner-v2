@@ -3,6 +3,7 @@ import logging
 import random
 import time
 import socket   #for sending data via TCP
+import copy
 from threading import Thread, Timer
 
 from dateutil import parser
@@ -163,7 +164,16 @@ class WebSocketsPool:
                 if message.data:
                     s.sendall(json.dumps(message.data).encode('utf-8'))
         except ConnectionRefusedError:
-            print('\033[91m'+"failed to send data: "+'\033[0m', message)
+            print('\033[91m'+"failed to send data: "+'\033[0m', message, flush=True)
+
+    @staticmethod
+    def send_TCP_message_bet_event(ws, message, event_id):
+        TCP_message = copy.deepcopy(message)
+        decision = ws.events_predictions[event_id].bet.calculate(ws.events_predictions[event_id].streamer.channel_points)
+        TCP_message.data['event_A'] = ws.events_predictions[event_id].bet.get_outcome(0)
+        TCP_message.data['event_B'] = ws.events_predictions[event_id].bet.get_outcome(1)
+        TCP_message.data['decision'] = decision["choice"]
+        WebSocketsPool.send_TCP_message(ws, TCP_message)
 
 
     @staticmethod
@@ -302,13 +312,11 @@ class WebSocketsPool:
                                         place_bet_thread.start()
                                         
                                         #extract bet data
-                                        TCP_message = message
-                                        decision = event.bet.calculate(event.streamer.channel_points)
-                                        TCP_message.data['event_A'] = ws.events_predictions[event_id].bet.get_outcome(0)
-                                        TCP_message.data['event_B'] = ws.events_predictions[event_id].bet.get_outcome(1)
-                                        TCP_message.data['decision'] = decision["choice"]
-                                        
-                                        WebSocketsPool.send_TCP_message(ws, TCP_message)
+                                        #WebSocketsPool.send_TCP_message(ws, TCP_message)
+                                        populate_thread = Timer(start_after, WebSocketsPool.send_TCP_message_bet_event, 
+                                                (ws, message, event_id))
+                                        populate_thread.start()
+
                                         logger.info(
                                             f"Place the bet after: {start_after}s for: {ws.events_predictions[event_id]}",
                                             extra={
