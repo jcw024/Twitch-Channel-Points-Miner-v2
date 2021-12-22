@@ -4,7 +4,7 @@ import time
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 7777
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 2048
 
 def on_new_client(conn, addr):
     while True:
