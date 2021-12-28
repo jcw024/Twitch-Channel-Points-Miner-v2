@@ -7,7 +7,7 @@ import json
 #set master?
 #specify spark.format.option
 
-def process_df(batch_df, batch_id):
+def process_prediction_df(batch_df, batch_id):
     df = batch_df.select("header.data.*")
     df = df.select("decision", "event.channel_id", "event.created_at", "event.id", 
             "event.title", "event.outcomes")
@@ -20,6 +20,14 @@ def process_df(batch_df, batch_id):
             col("outcome_B.odds").alias("odds_B"), col("outcome_B.percentage_users").alias("pct_users_B")
             )
 
+    df.show()
+    df.printSchema()
+    return
+
+def process_result_df(batch_df, batch_id):
+    df = batch_df.select("header.data.*")
+    df = df.select("timestamp","color_A", "color_B","decision","odds_A","odds_B","pct_users_A","pct_users_B","title_A","title_B",
+            "prediction.channel_id","prediction.event_id","prediction.result.type")
     df.show()
     df.printSchema()
     return
@@ -38,13 +46,13 @@ input_df = spark \
         .option("port", 7778) \
         .load()
 
-json_schema = spark.read.json("event_created.json").schema
+json_schema = spark.read.json("prediction_result.json").schema
 
 query = input_df \
         .withColumn('json', from_json(col('value'), json_schema)) \
         .select(col('json').alias('header')) \
         .writeStream \
-        .foreachBatch(process_df) \
+        .foreachBatch(process_result_df) \
         .outputMode("append") \
         .start()
 

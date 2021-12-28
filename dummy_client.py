@@ -8,7 +8,7 @@ TCP_PORT = 7778
 BUFFER_SIZE = 2048
 
 #dummy_data_list = [EVENT_CREATED, POINTS_SPENT, POINTS_EARNED, CLAIM_AVAILABLE, CLAIM_CLAIMED, PREDICTION_RESULT]
-dummy_data_list = [EVENT_CREATED]
+dummy_data_list = [PREDICTION_RESULT]
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((TCP_IP, TCP_PORT))
