@@ -187,6 +187,12 @@ class Bet(object):
     def get_outcome(self, index):
         return Bet.__parse_outcome(self.outcomes[index])
 
+    def get_outcome_dict(self, index):
+        outcome = self.outcomes[index]
+        out = {"title":outcome['title'],"color":outcome['color'],"percentage_users":outcome[OutcomeKeys.PERCENTAGE_USERS],"odds":outcome[OutcomeKeys.ODDS]}
+        return out
+
+
     def __clear_outcomes(self):
         for index in range(0, len(self.outcomes)):
             keys = copy.deepcopy(list(self.outcomes[index].keys()))

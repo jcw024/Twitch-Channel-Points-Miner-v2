@@ -167,9 +167,19 @@ class WebSocketsPool:
             print('\033[91m'+"failed to send data: "+'\033[0m', message, flush=True)
 
     @staticmethod
-    def send_TCP_message_bet_event(ws, message, event_id):
+    def send_TCP_message_result(ws, message, event_id):
         TCP_message = copy.deepcopy(message)
         decision = ws.events_predictions[event_id].bet.calculate(ws.events_predictions[event_id].streamer.channel_points)
+        outcome_dict_A = ws.events_predictions[event_id].bet.get_outcome_dict(0)
+        outcome_dict_B = ws.events_predictions[event_id].bet.get_outcome_dict(1)
+        TCP_message.data['title_A'] = outcome_dict_A['title']
+        TCP_message.data['color_A'] = outcome_dict_A['color']
+        TCP_message.data['pct_users_A'] = outcome_dict_A['percentage_users']
+        TCP_message.data['odds_A'] = outcome_dict_A['odds']
+        TCP_message.data['title_B'] = outcome_dict_B['title']
+        TCP_message.data['color_B'] = outcome_dict_B['color']
+        TCP_message.data['pct_users_B'] = outcome_dict_B['percentage_users']
+        TCP_message.data['odds_B'] = outcome_dict_B['odds']
         TCP_message.data['event_A'] = ws.events_predictions[event_id].bet.get_outcome(0)
         TCP_message.data['event_B'] = ws.events_predictions[event_id].bet.get_outcome(1)
         TCP_message.data['decision'] = decision["choice"]
@@ -203,7 +213,6 @@ class WebSocketsPool:
             if streamer_index != -1:
                 try:
                     if message.topic == "community-points-user-v1":
-                        WebSocketsPool.send_TCP_message(ws, message)
 
                         if message.type in ["points-earned", "points-spent"]:
                             balance = message.data["balance"]["balance"]
@@ -313,8 +322,8 @@ class WebSocketsPool:
                                         
                                         #extract bet data
                                         #WebSocketsPool.send_TCP_message(ws, TCP_message)
-                                        populate_thread = Timer(start_after, WebSocketsPool.send_TCP_message_bet_event, 
-                                                (ws, message, event_id))
+                                        populate_thread = Timer(start_after, WebSocketsPool.send_TCP_message, 
+                                                (ws, message))
                                         populate_thread.start()
 
                                         logger.info(
@@ -362,7 +371,7 @@ class WebSocketsPool:
                                 decision = event_prediction.bet.get_decision()
                                 choice = event_prediction.bet.decision["choice"]
 
-                                WebSocketsPool.send_TCP_message(ws, message)
+                                WebSocketsPool.send_TCP_message_result(ws, message, event_id)
                                 logger.info(
                                     f"{event_prediction} - Decision: {choice}: {decision['title']} ({decision['color']}) - Result: {event_prediction.result['string']}",
                                     extra={
