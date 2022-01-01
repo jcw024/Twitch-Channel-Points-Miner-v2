@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class TwitchWebSocket(WebSocketApp):
-    def __init__(self, index, parent_pool, BOOTSTRAP_SERVER, TCP_PORT, *args, **kw):
+    def __init__(self, index, parent_pool, BOOTSTRAP_SERVER, TCP_PORT, TOPIC, *args, **kw):
         super().__init__(*args, **kw)
         self.index = index
 
@@ -37,6 +37,7 @@ class TwitchWebSocket(WebSocketApp):
 
         self.BOOTSTRAP_SERVER = BOOTSTRAP_SERVER
         self.TCP_PORT = TCP_PORT
+        self.TOPIC = TOPIC
 
     # def close(self):
     #     self.forced_close = True

@@ -4,6 +4,7 @@ import random
 import time
 import socket   #for sending data via TCP
 import copy
+from kafka import KafkaProducer
 from threading import Thread, Timer
 
 from dateutil import parser
@@ -23,15 +24,16 @@ logger = logging.getLogger(__name__)
 
 
 class WebSocketsPool:
-    __slots__ = ["ws", "twitch", "streamers", "events_predictions", "BOOTSTRAP_SERVER", "TCP_PORT"]
+    __slots__ = ["ws", "twitch", "streamers", "events_predictions", "BOOTSTRAP_SERVER", "TCP_PORT", "TOPIC"]
 
-    def __init__(self, twitch, streamers, events_predictions, BOOTSTRAP_SERVER='127.0.0.1', TCP_PORT=7777):
+    def __init__(self, twitch, streamers, events_predictions, BOOTSTRAP_SERVER='127.0.0.1', TCP_PORT=7777, TOPIC="test"):
         self.ws = []
         self.twitch = twitch
         self.streamers = streamers
         self.events_predictions = events_predictions
         self.BOOTSTRAP_SERVER = BOOTSTRAP_SERVER
         self.TCP_PORT = TCP_PORT
+        self.TOPIC = TOPIC
 
     """
     API Limits
@@ -158,12 +160,10 @@ class WebSocketsPool:
     @staticmethod
     def send_TCP_message(ws, message):
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.setblocking(False)
-                s.connect_ex((ws.BOOTSTRAP_SERVER, ws.TCP_PORT))
-                if message.data:
-                    s.sendall(json.dumps(message.data).encode('utf-8'))
-        except ConnectionRefusedError:
+            producer = KafkaProducer(bootstrap_servers=ws.BOOTSTRAP_SERVER, linger_ms=1000, batch_size=16384)
+            data = json.dumps(message.data).encode("utf-8")
+            producer.send(ws.TOPIC, data)
+        except:
             print('\033[91m'+"failed to send data: "+'\033[0m', message, flush=True)
 
     @staticmethod
