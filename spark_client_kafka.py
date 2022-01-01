@@ -18,10 +18,10 @@ def process_prediction_df(batch_df, batch_id):
     df.printSchema()
     df.write \
             .format("jdbc") \
-            .option("url","jdbc:redshift://redshift-cluster-free-tier.cpwksln1mngr.us-west-2.redshift.amazonaws.com:5439/dev") \
+            .option("url","jdbc:url") \
             .option("dbtable", "public.pred_results") \
             .option("user", "awsuser") \
-            .option("password", "Gm2f!mP7nPmA&o") \
+            .option("password", "password") \
             .option("startingOffset", "latest") \
             .save(mode="append")
 
