@@ -22,18 +22,16 @@ def process_prediction_df(batch_df, batch_id):
 
     df.show()
     df.printSchema()
-    return
-
-def process_result_df(batch_df, batch_id):
-    df = batch_df.select("header.data.*")
-    df = df.select("timestamp","color_A", "color_B","decision","odds_A","odds_B","pct_users_A","pct_users_B","title_A","title_B",
-            "prediction.channel_id","prediction.event_id","prediction.result.type")
-    df.show()
-    df.printSchema()
+    df.write \
+            .format("jdbc") \
+            .option("url","jdbc:url") \
+            .option("dbtable", "public.pred_results") \
+            .option("user", "awsuser") \
+            .option("password", "password") \
+            .save()
     return
 
 spark = SparkSession.builder \
-        .master("local[3]") \
         .appName("dummy_spark_server") \
         .getOrCreate()
 
@@ -52,7 +50,7 @@ query = input_df \
         .withColumn('json', from_json(col('value'), json_schema)) \
         .select(col('json').alias('header')) \
         .writeStream \
-        .foreachBatch(process_result_df) \
+        .foreachBatch(process_prediction_df) \
         .outputMode("append") \
         .start()
 
