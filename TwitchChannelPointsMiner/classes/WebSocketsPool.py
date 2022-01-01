@@ -23,14 +23,14 @@ logger = logging.getLogger(__name__)
 
 
 class WebSocketsPool:
-    __slots__ = ["ws", "twitch", "streamers", "events_predictions", "TCP_IP", "TCP_PORT"]
+    __slots__ = ["ws", "twitch", "streamers", "events_predictions", "BOOTSTRAP_SERVER", "TCP_PORT"]
 
-    def __init__(self, twitch, streamers, events_predictions, TCP_IP='127.0.0.1', TCP_PORT=7777):
+    def __init__(self, twitch, streamers, events_predictions, BOOTSTRAP_SERVER='127.0.0.1', TCP_PORT=7777):
         self.ws = []
         self.twitch = twitch
         self.streamers = streamers
         self.events_predictions = events_predictions
-        self.TCP_IP = TCP_IP
+        self.BOOTSTRAP_SERVER = BOOTSTRAP_SERVER
         self.TCP_PORT = TCP_PORT
 
     """
@@ -67,7 +67,7 @@ class WebSocketsPool:
             on_open=WebSocketsPool.on_open,
             on_error=WebSocketsPool.on_error,
             on_close=WebSocketsPool.on_close,
-            TCP_IP=self.TCP_IP,
+            BOOTSTRAP_SERVER=self.BOOTSTRAP_SERVER,
             TCP_PORT=self.TCP_PORT
             # on_close=WebSocketsPool.handle_reconnection, # Do nothing.
         )
@@ -160,7 +160,7 @@ class WebSocketsPool:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.setblocking(False)
-                s.connect_ex((ws.TCP_IP, ws.TCP_PORT))
+                s.connect_ex((ws.BOOTSTRAP_SERVER, ws.TCP_PORT))
                 if message.data:
                     s.sendall(json.dumps(message.data).encode('utf-8'))
         except ConnectionRefusedError:
