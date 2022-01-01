@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class WebSocketsPool:
     __slots__ = ["ws", "twitch", "streamers", "events_predictions", "BOOTSTRAP_SERVER", "TCP_PORT", "TOPIC"]
 
-    def __init__(self, twitch, streamers, events_predictions, BOOTSTRAP_SERVER='127.0.0.1', TCP_PORT=7777, TOPIC="test"):
+    def __init__(self, twitch, streamers, events_predictions, BOOTSTRAP_SERVER="localhost:9092", TCP_PORT=7777, TOPIC="test"):
         self.ws = []
         self.twitch = twitch
         self.streamers = streamers
@@ -70,7 +70,8 @@ class WebSocketsPool:
             on_error=WebSocketsPool.on_error,
             on_close=WebSocketsPool.on_close,
             BOOTSTRAP_SERVER=self.BOOTSTRAP_SERVER,
-            TCP_PORT=self.TCP_PORT
+            TCP_PORT=self.TCP_PORT,
+            TOPIC=self.TOPIC
             # on_close=WebSocketsPool.handle_reconnection, # Do nothing.
         )
 
